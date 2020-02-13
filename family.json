@@ -1,0 +1,17 @@
+{
+  "Family": [],
+  "Groups": [
+    {
+      "value": "parents",
+      "id": 1
+    },
+    {
+      "value": "children",
+      "id": 2
+    },
+    {
+      "value": "pets",
+      "id": 3
+    }
+  ]
+}
