@@ -31,18 +31,34 @@ class Family {
   }
 
   async initJSON() {
-    await this.checkJsonExistence();
+    const isExists = await this.checkJsonExistence();
+    if (!isExists) {
+      console.log('Json file does not exist, creating a new one...');
+      await this.createValidJsonFile();
+      return await this.initJSON();
+    }
+    await this.checkJsonFamilyStructure();
     await this.checkJsonValidation();
     const currentData = await this.readJsonFile();
     this.currentData = currentData;
   }
 
-  async createJsonFile() {
+  async createValidJsonFile() {
     try {
       const stringified = JSON.stringify(this.validStructure, null, 2);
       await writeFilePromisify(this.fileName, stringified);
     } catch (err) {
       console.log(err);
+    }
+  }
+
+  async checkJsonFamilyStructure() {
+    const data = await this.readJsonFile();
+    if (!data.Groups) {
+      console.log(
+        'Current Json - Family structure is invalid, re-writing json...'
+      );
+      await this.createValidJsonFile();
     }
   }
 
@@ -65,8 +81,9 @@ class Family {
     }
   }
 
-  checkFamilyValidation(object) {
+  async checkFamilyValidation(object) {
     let hasErrors = false;
+    let famKeys = Object.keys(object);
     const correctFamKeys = [
       'id',
       'firstName',
@@ -75,14 +92,13 @@ class Family {
       'ownerId',
       'loversIds'
     ];
-    const famKeys = Object.keys(object);
     for (let i = 0; i < correctFamKeys.length; i++) {
       if (famKeys[i] !== correctFamKeys[i]) {
         hasErrors = true;
       } else if (object.groupId > 3 && object.groupId < 1) {
         hasErrors = true;
       } else if (isNaN(object.id) && isNaN(object.groupId)) {
-        errors += 1;
+        hasErrors = true;
       }
     }
     return hasErrors;
@@ -91,8 +107,9 @@ class Family {
   async checkJsonExistence() {
     try {
       await accessPromisify(this.fileName);
+      return 'exists';
     } catch (err) {
-      await this.createJsonFile();
+      await this.createValidJsonFile();
     }
   }
 
@@ -103,7 +120,7 @@ class Family {
     const valid = ajv.validate(currentData);
     if (valid) {
       isValid = true;
-      return;
+      return isValid;
     }
     console.log("File's structure is invalid!");
     return isValid;
@@ -111,7 +128,18 @@ class Family {
 
   async addNewMember(data) {
     await this.initJSON();
-    this.validateNewMember(data);
+    const freshUserInfo = this.validateNewMember(data);
+    return freshUserInfo;
+  }
+
+  // findItem(arr, object, queryParam) {
+  //   const foundObj = arr.find(item => item[queryParam] === object[queryParam]);
+  //   return foundObj;
+  // }
+
+  findFamilyMember(arr, objItem, query) {
+    const foundObject = arr.find(member => member[query] === objItem);
+    return foundObject;
   }
 
   async validateNewMember(object) {
@@ -125,21 +153,35 @@ class Family {
     const { id: groupId } = Groups.find(
       group => group.value === object.groupName
     );
-
     if (Family.length !== 0) {
-      const { id: ownerId } = Family.find(
-        owner =>
-          owner.firstName === object.owner.firstName &&
-          owner.lastName === object.owner.lastName
+      const ownerFirstName = this.findFamilyMember(
+        Family,
+        object.owner.firstName,
+        firstName
       );
-      object.lovers.map(lover => {
-        const { id } = Family.find(
-          person =>
-            person.firstName === lover.firstName &&
-            person.lastName === lover.lastName
-        );
-        loversIds.push(id);
-      });
+      const ownerLastName = this.findFamilyMember(
+        Family,
+        object.owner.lastName,
+        lastName
+      );
+      if (ownerFirstName === undefined && ownerLastName === undefined) {
+        throw new Error('Your owner has not been found, try another one!');
+      }
+      const loverFirstName = this.findFamilyMember(
+        Family,
+        lover.firstName,
+        firstName
+      );
+      const loverLastName = this.findFamilyMember(
+        Family,
+        lover.lastName,
+        lastName
+      );
+      if (loverFirstName === undefined && loverLastName === undefined) {
+        throw new Error('Your lover has not been found, try another one!');
+      } else {
+        loversIds.push(loverMember.id);
+      }
       for (let i = 0; i < Family.length; i++) {
         memberId = Family[i].id + 1;
       }
@@ -148,7 +190,7 @@ class Family {
         firstName: object.firstName,
         lastName: object.lastName,
         groupId,
-        ownerId,
+        ownerId: owner.id,
         loversIds
       };
     }
@@ -194,9 +236,9 @@ class Family {
       {
         ...memberToEdit
       }
-    ].sort((a,b) => a.id - b.id);
+    ].sort((a, b) => a.id - b.id);
     await this.saveDataToJson(newData);
-    return console.log('You have successfully changed a member');
+    return 'You have successfully changed a member';
   }
 
   async deleteFamilyMember(id) {
@@ -206,11 +248,9 @@ class Family {
     const memberIndex = Family.findIndex(member => member.id === id);
     Family.splice(memberIndex, 1);
     await this.saveDataToJson(newData);
-    // return newData;
+    return 'You have successfully deleted a member';
   }
 }
-
-module.exports = Family;
 
 const fam = new Family();
 
@@ -218,9 +258,8 @@ const fam = new Family();
 //   firstName: 'Miras',
 //   lastName: 'Rambaev',
 //   groupName: 'parents',
-//   owner: { firstName: 'Miras', lastName: 'Rambaev' },
-//   lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }]
+//   owner: { firstName: 'Angelinka', lastName: 'Zhopka' },
+//   lovers: [{ firstName: 'Angelinka', lastName: 'Zhopka' }]
 // });
 
-// fam.editFamilyMembers(2, { lastName: 'Rm' });
-fam.deleteFamilyMember(1);
+module.exports = Family;

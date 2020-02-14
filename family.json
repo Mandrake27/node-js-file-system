@@ -1,5 +1,14 @@
 {
-  "Family": [],
+  "Family": [
+    {
+      "id": 1,
+      "firstName": "Miras",
+      "lastName": "Rambaev",
+      "groupId": 1,
+      "ownerId": "none",
+      "loversIds": "self"
+    }
+  ],
   "Groups": [
     {
       "value": "parents",
