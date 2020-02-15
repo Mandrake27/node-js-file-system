@@ -132,15 +132,10 @@ class Family {
     return freshUserInfo;
   }
 
-  // findItem(arr, object, queryParam) {
-  //   const foundObj = arr.find(item => item[queryParam] === object[queryParam]);
-  //   return foundObj;
-  // }
 
-  findFamilyMember(arr, objItem, query) {
-    const foundObject = arr.find(member => member[query] === objItem);
-    return foundObject;
-  }
+  findFamilyMember = (arr, obj, query) => arr.find(member => member[query] === obj[query]);
+  
+
 
   async validateNewMember(object) {
     let memberId = 1;
@@ -154,33 +149,19 @@ class Family {
       group => group.value === object.groupName
     );
     if (Family.length !== 0) {
-      const ownerFirstName = this.findFamilyMember(
-        Family,
-        object.owner.firstName,
-        firstName
-      );
-      const ownerLastName = this.findFamilyMember(
-        Family,
-        object.owner.lastName,
-        lastName
-      );
-      if (ownerFirstName === undefined && ownerLastName === undefined) {
+      const { firstName, id } = this.findFamilyMember(Family, object.owner, 'firstName');
+      const { lastName } = this.findFamilyMember(Family, object.owner, 'lastName');  
+      if (firstName === undefined && lastName === undefined) {
         throw new Error('Your owner has not been found, try another one!');
       }
-      const loverFirstName = this.findFamilyMember(
-        Family,
-        lover.firstName,
-        firstName
-      );
-      const loverLastName = this.findFamilyMember(
-        Family,
-        lover.lastName,
-        lastName
-      );
-      if (loverFirstName === undefined && loverLastName === undefined) {
-        throw new Error('Your lover has not been found, try another one!');
-      } else {
-        loversIds.push(loverMember.id);
+      const { lovers } = object;
+      for (let i = 0; i < lovers.length; i++) {
+        const { firstName, id } = this.findFamilyMember(Family, lovers[i], 'firstName');
+        const { lastName } = this.findFamilyMember(Family, lovers[i], 'lastName');
+        if (firstName === undefined && lastName === undefined) {
+          throw new Error('Your lover has not been found, try another one!');
+        }
+        loversIds.push(id);
       }
       for (let i = 0; i < Family.length; i++) {
         memberId = Family[i].id + 1;
@@ -190,7 +171,7 @@ class Family {
         firstName: object.firstName,
         lastName: object.lastName,
         groupId,
-        ownerId: owner.id,
+        ownerId: id,
         loversIds
       };
     }
@@ -246,6 +227,7 @@ class Family {
     const newData = JSON.parse(JSON.stringify(this.currentData));
     const { Family } = newData;
     const memberIndex = Family.findIndex(member => member.id === id);
+    if (memberIndex === -1) throw new Error('Could not find member with your id, try again!');
     Family.splice(memberIndex, 1);
     await this.saveDataToJson(newData);
     return 'You have successfully deleted a member';
@@ -255,11 +237,13 @@ class Family {
 const fam = new Family();
 
 // fam.addNewMember({
-//   firstName: 'Miras',
-//   lastName: 'Rambaev',
+//   firstName: 'Homa',
+//   lastName: 'Pushitik',
 //   groupName: 'parents',
-//   owner: { firstName: 'Angelinka', lastName: 'Zhopka' },
-//   lovers: [{ firstName: 'Angelinka', lastName: 'Zhopka' }]
+//   owner: { firstName: 'Miras', lastName: 'Rambaev' },
+//   lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }, { firstName: 'Angelinka', lastName: 'Zhopka' }]
 // });
+
+fam.deleteFamilyMember(2);
 
 module.exports = Family;

@@ -1,9 +1,5 @@
 const Family = require('./family');
 
-/*
-deleteFamilyMember(id)
-*/
-
 const fam = new Family();
 
 const createJsonFileText = async () => {
@@ -49,13 +45,13 @@ const addNewMemberTest = async object => {
   if (newAddedObject) return console.log('Add new member test - passed!');
 };
 
-addNewMemberTest({
-  firstName: 'Angelinka',
-  lastName: 'Bondarchuk',
-  groupName: 'parents',
-  owner: { firstName: 'Miras', lastName: 'Rambaev' },
-  lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }]
-});
+// addNewMemberTest({
+//   firstName: 'Angelinka',
+//   lastName: 'Bondarchuk',
+//   groupName: 'parents',
+//   owner: { firstName: 'Miras', lastName: 'Rambaev' },
+//   lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }]
+// });
 
 const checkFamilyValidationTest = async object => {
   const newAddedObject = await fam.addNewMember(object);
@@ -81,7 +77,8 @@ const editFamilyMembersTest = async (id, changes) => {
 
 const deleteFamilyMemberTest = async (id) => {
   const isDeleted = await fam.deleteFamilyMember(id);
+  console.log(isDeleted);
   if (isDeleted) return console.log('Family member remove test - passed');
 }
 
-// deleteFamilyMemberTest(1);
+// deleteFamilyMemberTest(4);
