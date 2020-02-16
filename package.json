@@ -1,0 +1,24 @@
+{
+  "name": "node-js-file-system",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "ajv": "^6.11.0"
+  },
+  "description": "tests",
+  "main": "family.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mandrake27/node-js-file-system.git"
+  },
+  "author": "Miras Rambaev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mandrake27/node-js-file-system/issues"
+  },
+  "homepage": "https://github.com/Mandrake27/node-js-file-system#readme"
+}

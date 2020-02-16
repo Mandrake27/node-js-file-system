@@ -30,48 +30,38 @@ const buildHtml = (data, title) =>
         </body>
     </html>`;
 
-const createDir = async () => {
+const createDir = async (dirName) => {
   try {
-    await mkdirPromisify('src');
-    await mkdirPromisify('build');
+    await mkdirPromisify(dirName);
   } catch (err) {
     throw err;
   }
 };
 
 const createHtmlFile = async () => {
-  await writeFilePromisify(
-    './src/index.html',
-    buildHtml(['Milk', 'Bananas', 'Doshirak'], 'Shopping-List'),
-    err => {
-      if (err) throw err;
-    }
-  );
+  try {
+    await writeFilePromisify(
+      './src/html/index.html',
+      buildHtml(['Milk', 'Bananas', 'Doshirak'], 'Shopping-List'))
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-const moveHtmlFile = async () => {
-  await renameFilePromisify('./src/index.html', './build/index.html', err => {
-    if (err) throw err;
-  });
-};
-
-const launchServer = () => {
-  http
-    .createServer((req, res) => {
-      fs.readFile('./build/index.html', (err, data) => {
-        if (err) throw err;
-        console.log(data);
-        res.end(data);
-      });
-    })
-    .listen(3000);
+const moveHtmlFile = async (oldPath, newPath) => {
+  try {
+    await renameFilePromisify(oldPath, newPath);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const doFollowingActions = async () => {
-  await createDir();
+  await createDir('src');
+  await createDir('src/html');
   await createHtmlFile();
-  await moveHtmlFile();
+  await createDir('src/build');
+  await moveHtmlFile('./src/html/index.html', './src/build/index.html');
 };
 
 doFollowingActions();
-launchServer();

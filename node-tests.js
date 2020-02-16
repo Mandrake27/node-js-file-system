@@ -41,22 +41,25 @@ const checkJsonValidationTest = async () => {
 // checkJsonValidationTest();
 
 const addNewMemberTest = async object => {
-  const newAddedObject = await fam.addNewMember(object);
-  if (newAddedObject) return console.log('Add new member test - passed!');
+  const { firstName, lastName } = object;
+  const { firstName: freshFirstName, lastName: freshLastName } = await fam.addNewMember(object);
+  if (firstName === freshFirstName && lastName === freshLastName) {
+    return console.log('Add new member test - passed!');
+  }
 };
 
 // addNewMemberTest({
-//   firstName: 'Angelinka',
-//   lastName: 'Bondarchuk',
+//   firstName: 'Miras',
+//   lastName: 'Rambaev',
 //   groupName: 'parents',
 //   owner: { firstName: 'Miras', lastName: 'Rambaev' },
 //   lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }]
 // });
 
 const checkFamilyValidationTest = async object => {
-  const newAddedObject = await fam.addNewMember(object);
-  const hasErrors = await fam.checkFamilyValidation(newAddedObject);
-  if (!hasErrors) return console.log('New member check test - passed');
+  await fam.initJSON();
+  const isPassed = await fam.checkFamilyValidation(object);
+  if (isPassed) return console.log('New member check test - passed');
 };
 
 // checkFamilyValidationTest({

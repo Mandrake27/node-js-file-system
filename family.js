@@ -31,13 +31,7 @@ class Family {
   }
 
   async initJSON() {
-    const isExists = await this.checkJsonExistence();
-    if (!isExists) {
-      console.log('Json file does not exist, creating a new one...');
-      await this.createValidJsonFile();
-      return await this.initJSON();
-    }
-    await this.checkJsonFamilyStructure();
+    await this.checkJsonExistence();
     await this.checkJsonValidation();
     const currentData = await this.readJsonFile();
     this.currentData = currentData;
@@ -49,16 +43,6 @@ class Family {
       await writeFilePromisify(this.fileName, stringified);
     } catch (err) {
       console.log(err);
-    }
-  }
-
-  async checkJsonFamilyStructure() {
-    const data = await this.readJsonFile();
-    if (!data.Groups) {
-      console.log(
-        'Current Json - Family structure is invalid, re-writing json...'
-      );
-      await this.createValidJsonFile();
     }
   }
 
@@ -82,26 +66,24 @@ class Family {
   }
 
   async checkFamilyValidation(object) {
-    let hasErrors = false;
-    let famKeys = Object.keys(object);
     const correctFamKeys = [
-      'id',
       'firstName',
       'lastName',
-      'groupId',
-      'ownerId',
-      'loversIds'
+      'groupName',
+      'owner',
+      'lovers'
     ];
+    const groupMatch = this.findGroupByName(object.groupName);
+    const inputKeys = Object.keys(object);
     for (let i = 0; i < correctFamKeys.length; i++) {
-      if (famKeys[i] !== correctFamKeys[i]) {
-        hasErrors = true;
-      } else if (object.groupId > 3 && object.groupId < 1) {
-        hasErrors = true;
-      } else if (isNaN(object.id) && isNaN(object.groupId)) {
-        hasErrors = true;
+      if (inputKeys[i] !== correctFamKeys[i]) {
+        throw new Error('Found invalid keys in your object, check them again');
       }
     }
-    return hasErrors;
+    if (!groupMatch) {
+      throw new Error('Invalid group name, change it!');
+    }
+    return 'test passed';
   }
 
   async checkJsonExistence() {
@@ -109,59 +91,62 @@ class Family {
       await accessPromisify(this.fileName);
       return 'exists';
     } catch (err) {
-      await this.createValidJsonFile();
+      console.log(err);
     }
   }
 
   async checkJsonValidation() {
-    let isValid = false;
     const ajv = new Ajv();
     const currentData = await this.readJsonFile();
-    const valid = ajv.validate(currentData);
-    if (valid) {
-      isValid = true;
-      return isValid;
+    if (!currentData.Groups) {
+      throw new Error('Json structure is invalid, check the name of json file');
     }
-    console.log("File's structure is invalid!");
-    return isValid;
+    const valid = ajv.validate(currentData);
+    if (!valid) {
+      throw new Error("File's structure is invalid!");
+    }
   }
 
   async addNewMember(data) {
     await this.initJSON();
+    await this.checkFamilyValidation(data);
     const freshUserInfo = this.validateNewMember(data);
     return freshUserInfo;
   }
 
 
-  findFamilyMember = (arr, obj, query) => arr.find(member => member[query] === obj[query]);
-  
+  findFamilyMember(obj) {
+    const { Family } = this.currentData;
+    return Family.find(member => member.firstName === obj.firstName && member.lastName === obj.lastName);
+  }
+
+  findGroupByName(name) {
+    const { Groups } = this.currentData;
+    return Groups.find(groupName => groupName.value === name);
+  }
+
 
 
   async validateNewMember(object) {
     let memberId = 1;
     const loversIds = [];
     let newObject = {};
-    await this.checkJsonExistence();
     const data = await this.readJsonFile();
     const { Family } = data;
-    const { Groups } = data;
-    const { id: groupId } = Groups.find(
-      group => group.value === object.groupName
-    );
+    const { id: groupId } = this.findGroupByName(object.groupName);
     if (Family.length !== 0) {
-      const { firstName, id } = this.findFamilyMember(Family, object.owner, 'firstName');
-      const { lastName } = this.findFamilyMember(Family, object.owner, 'lastName');  
-      if (firstName === undefined && lastName === undefined) {
+      const owner = this.findFamilyMember(object.owner);
+      if (owner.firstName === undefined && owner.lastName === undefined) {
         throw new Error('Your owner has not been found, try another one!');
       }
       const { lovers } = object;
       for (let i = 0; i < lovers.length; i++) {
-        const { firstName, id } = this.findFamilyMember(Family, lovers[i], 'firstName');
-        const { lastName } = this.findFamilyMember(Family, lovers[i], 'lastName');
-        if (firstName === undefined && lastName === undefined) {
+        const lover = this.findFamilyMember(lovers[i]);
+        console.log(lover);
+        if (lover.firstName === undefined && lover.lastName === undefined) {
           throw new Error('Your lover has not been found, try another one!');
         }
-        loversIds.push(id);
+        loversIds.push(lover.id);
       }
       for (let i = 0; i < Family.length; i++) {
         memberId = Family[i].id + 1;
@@ -171,7 +156,7 @@ class Family {
         firstName: object.firstName,
         lastName: object.lastName,
         groupId,
-        ownerId: id,
+        ownerId: owner.id,
         loversIds
       };
     }
@@ -186,13 +171,9 @@ class Family {
         loversIds: 'self'
       };
     }
-
-    const hasErrors = await this.checkFamilyValidation(newObject);
-    if (!hasErrors) {
-      this.currentData.Family.push(newObject);
-      await this.saveDataToJson();
-      return newObject;
-    }
+    this.currentData.Family.push(newObject);
+    await this.saveDataToJson();
+    return newObject;
   }
 
   async editFamilyMembers(id, changes) {
@@ -233,17 +214,5 @@ class Family {
     return 'You have successfully deleted a member';
   }
 }
-
-const fam = new Family();
-
-// fam.addNewMember({
-//   firstName: 'Homa',
-//   lastName: 'Pushitik',
-//   groupName: 'parents',
-//   owner: { firstName: 'Miras', lastName: 'Rambaev' },
-//   lovers: [{ firstName: 'Miras', lastName: 'Rambaev' }, { firstName: 'Angelinka', lastName: 'Zhopka' }]
-// });
-
-fam.deleteFamilyMember(2);
 
 module.exports = Family;
